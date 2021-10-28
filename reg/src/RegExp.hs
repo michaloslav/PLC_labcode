@@ -48,36 +48,44 @@ instance Show RegExp where
 -- /alt [c1,c2,...,cn]/ is /c1 `Alt` c2 `Alt` ... `Alt` cn/.
 
 alts :: String -> RegExp
-alts = undefined
+alts (x:xs) = foldr (\ a b -> Alt a (Sym b)) x xs
 
 exprA :: RegExp
-exprA = undefined
+exprA = ((Star Sym 0) `Cat` 1) `Cat` (Star Sym 0)
 exprB :: RegExp
-exprB = undefined
+exprB = (((((Star (Alt (Sym 0) (Alt 1)))) `Cat` Sym 0) `Cat` Sym 0) `Cat` Sym 1) `Cat` (Star (Alt (Sym 0) (Alt 1)))
 exprC :: RegExp
-exprC = undefined
+exprC = Star ((Alt (Sym 0) (Sym 1)) `Cat` (Alt (Sym 0) (Sym 1)))
 exprD :: RegExp
-exprD = undefined
+exprD = (Alt (Sym 0) Eps) `Cat` (Star (Sym 1))
 exprE :: RegExp
-exprE = undefined
+exprE = (Alt (Sym 0) Eps) `Cat` (Alt (Sym 1) Eps)
 
+numbers :: RegExp
+numbers = alts "0123456789"
+
+letters :: RegExp
+letters = alts "abcdefghijklmnopqrstuvwxyz"
 
 -- | /exprUN/ is a regular expression matching Bristol usernames.
 
 exprUN :: RegExp
-exprUN = undefined
+exprUN = (((((letters `Cat` letters) `Cat` numbers) `Cat` numbers) `Cat` numbers) `Cat` numbers) `Cat` numbers
 
 
 -- | /exprTime/ is a regular expression matching times in HH:MM 24hr format.
 
 exprTime :: RegExp
-exprTime = undefined
+exprTime = (((numbers `Cat` numbers) `Cat` (Sym :)) `Cat` numbers) `Cat` numbers
 
 
 -- | /exprIPv4/ is a regular expression matching IPv4 addresses written in decimal.
 
+exprIPv4Part :: RegExp
+exprIPv4Part = ((alts "12") `Cat` numbers) `Cat` numbers
+
 exprIPv4 :: RegExp
-exprIPv4 = undefined
+exprIPv4 = (((((exprIPv4Part `Cat` (Sym .)) `Cat` exprIPv4Part) `Cat` (Sym .)) `Cat` exprIPv4Part) `Cat` (Sym .)) `Cat` exprIPv4Part
 
 
 -- | Given a regular expression /rex/ and a natural number /n/,
