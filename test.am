@@ -1,0 +1,20 @@
+PUSH 3;
+STORE a;
+
+PUSH 5;
+STORE b;
+
+LOAD a;
+LOAD b;
+ADD;
+STORE b;
+
+LOAD a;
+LOAD b;
+SUB;
+STORE a;
+
+LOAD a;
+LOAD b;
+SUB;
+STORE b;
