@@ -8,28 +8,32 @@ import BamAST
 import qualified Parser(parse)
 
 aritToInstrs :: AExpr -> Code -> Code
-aritToInstrs (EVar x) = [IFetch x]
-aritToInstrs (EInt n) = [IPush n]
-aritToInstrs (AAdd op a b) = [aritToInstrs a, aritToInstrs b, IAdd]
-aritToInstrs (ASub op a b) = [aritToInstrs a, aritToInstrs b, ISub]
-aritToInstrs (AMul op a b) = [aritToInstrs a, aritToInstrs b, IMul]
+aritToInstrs (EInt n)     acc = IPush  (CNum n) : acc
+aritToInstrs (EVar x)     acc = IFetch x : acc
+aritToInstrs (EBinOp o a1 a2) acc = aritToInstrs a1 $ aritToInstrs a2 $ opToInstr o : acc
+  where
+    opToInstr AAdd = IAdd
+    opToInstr ASub = ISub
+    opToInstr AMul = IMul
 
 boolToInstrs :: BExpr -> Code -> Code
-boolToInstrs (BBool x) = [IFetch x]
-boolToInstrs (BNot x) = [boolToInstrs x, INot]
-boolToInstrs (BAnd a b) = [boolToInstrs a, boolToInstrs b, IAnd]
-boolToInstrs (AEq a b) = [boolToInstrs a, boolToInstrs b, IEq]
-boolToInstrs (ALe a b) = [boolToInstrs a, boolToInstrs b, ILe]
+boolToInstrs (BBool b)       acc = IPush (CBool b)  : acc
+boolToInstrs (BComp o a1 a2) acc = aritToInstrs a1 $ aritToInstrs a2 $ opToInstr o  : acc
+  where
+    opToInstr AEq = IEq
+    opToInstr ALe = ILe
+boolToInstrs (BNot b)        acc = boolToInstrs b (INot : acc)
+boolToInstrs (BAnd b1 b2)    acc = boolToInstrs b1 $ boolToInstrs b2 $ IAnd : acc
 
 boolToCode :: BExpr -> Code
 boolToCode b = boolToInstrs b []
 
 stmtToInstrs :: Stmt -> Code -> Code
-stmtToInstrs SSkip = []
-stmtToInstrs (SAssign v e) = [aritToInstrs e, IStore v]
-stmtToInstrs (SIte e a b) = [boolToInstrs e, IBranch a b]
-stmtToInstrs (SWhile c s) = [ILoop c s]
-stmtToInstrs (SSeq a b) = [a, b]
+stmtToInstrs  SSkip         acc = acc
+stmtToInstrs (SWhile b s)   acc = ILoop (boolToCode b) (compile s) : acc
+stmtToInstrs (SAssign x a)  acc = aritToInstrs a  $ IStore x : acc
+stmtToInstrs (SSeq s1 s2)   acc = stmtToInstrs s1 $ stmtToInstrs s2 acc
+stmtToInstrs (SIte b se st) acc = boolToInstrs b  $ IBranch (compile se) (compile st) : acc
 
 compile :: Stmt -> Code
 compile s = stmtToInstrs s []
